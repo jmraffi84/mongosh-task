@@ -1,0 +1,108 @@
+1. // Find all the topics and tasks which are thought in the month of October 
+db.task.aggregate(
+    [{$match:
+    {taskDate:/202010/}},
+    {$lookup:
+    {from:"topics",
+    localField:"taskDate",
+    foreignField:"topicDate",
+    as:"topics"}},
+    {
+        $project:
+        {"taskDate":1, 
+        "task":1,
+        "topics.topic":1,_id:0,}
+        }]);
+
+2.
+db.task.aggregate(
+    [
+        {
+            $match: {taskDate:/202010/}
+        },
+        {
+            $lookup:
+        {
+        from:"topic",
+        localField:"taskDate",
+        foreignField:"topicDate",
+        as:"topics"
+        }},
+        ]); 
+
+ 3.
+  db.tasks.aggregate(
+    [
+        {
+            $match:{taskDate:/202010/}
+            },
+            {
+            $lookup:{from:"topic",
+            localField:"taskDate",
+            foreignField:"topicDate",
+            as:"topics"
+            }}
+            ]).forEach((doc)=>{print("Date:",doc.taskDate,"Task:",doc.task,"Topic:",doc.topics[0].topic)});       
+
+4. // Find all the company drives which appeared between 15 oct-2020 and 31-oct-2020
+db.companydrives.find(
+    {dateHeld:
+    {$gte:"20201015",$lte:"20201030"}},
+    {_id:0}).toArray();
+
+5. // Find all the company drives and students who are appeared for the placement.
+
+6.// Find the number of problems solved by the user in codekata
+db.users.aggregate(
+    [
+        {
+            $lookup:{from:"codekata",
+            localField:"studentID",
+            foreignField:"studentID",
+            as:"codekata"
+            }},
+            {$project:{"studentID":1,
+            "name":1,
+            "codekata.solved":1,_id:0,}}])
+
+7.
+// Find all the mentors with who has the mentee's count more than 15
+db.mentor.aggregate(
+    [
+        {
+            $project:{mentor:1,_id:0,
+            mentees:{$size:"$mentee"}
+        }},
+        {
+            $match:{mentees:{$gt:15}}}]);
+
+8.
+// Find the number of users who are absent and task is not submitted  between 15 oct-2020 and 31-oct-2020
+db.task.aggregate(
+    [
+        {
+            $match:{taskDate:{$gte:"20201015",$lte:"20201030"}
+            }},
+            {
+                $lookup:{from:"attendance",
+                localField:"taskDate",
+                foreignField:"attendanceDate",
+                as:"attendance"}
+                },
+                {
+                    $project:{"taskDate":1,
+                    "task":1,
+                    "taskPending":1,_id:0,
+                    "attendance.topic":1,
+                    "attendance.absentees":1}
+                    }]).toArray().forEach((doc)=>{print("\nDate:",doc.taskDate,"\nTask:",doc.task,"\nTask not submitted by:"),
+                    doc.taskPending.forEach((val)=>{db.user.find({studentID:val},{_id:0}).toArray().forEach((x)=>print("ID:",x.studentID,"Name:",x.name))}),
+                    print("Topics:",doc.attendance[0].topic,"\nAbsent for class:"),
+                    doc.attendance[0].absentees.forEach((abs)=>{db.users.find({studentID:abs},
+                    {_id:0}).toArray().forEach((y)=>print("ID:",y.studentID,"Name:",y.name))})});            
+
+
+
+
+
+
